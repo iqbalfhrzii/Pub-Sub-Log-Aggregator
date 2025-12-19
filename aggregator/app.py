@@ -94,25 +94,30 @@ def validate_event(event: EventPayload) -> Dict[str, Any]:
 async def publish_event(event: EventPayload, background_tasks: BackgroundTasks):
     """
     Publish single event ke sistem
-    Menggunakan Redis sebagai message broker untuk async processing
+    Process directly untuk immediate duplicate detection
     """
     try:
         validated_event = validate_event(event)
         
-        if redis_client:
-            # Push ke Redis queue untuk async processing
-            await redis_client.rpush("event_queue", json.dumps(validated_event))
-            logger.info(f"Event queued: {validated_event['topic']}/{validated_event['event_id']}")
-        else:
-            # Fallback: process directly jika Redis tidak tersedia
-            await db.process_event_idempotent(validated_event)
+        # Process directly untuk immediate response
+        is_new = await db.process_event_idempotent(validated_event)
         
-        return {
-            "status": "accepted",
-            "event_id": validated_event["event_id"],
-            "topic": validated_event["topic"],
-            "message": "Event queued for processing"
-        }
+        if is_new:
+            return {
+                "status": "accepted",
+                "event_id": validated_event["event_id"],
+                "topic": validated_event["topic"],
+                "message": "Event processed successfully",
+                "processed": True
+            }
+        else:
+            return {
+                "status": "accepted",
+                "event_id": validated_event["event_id"],
+                "topic": validated_event["topic"],
+                "message": "Duplicate event dropped",
+                "processed": False
+            }
     
     except Exception as e:
         logger.error(f"Publish error: {e}")

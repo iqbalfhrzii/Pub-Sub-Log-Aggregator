@@ -1,14 +1,14 @@
-version: '3.8'
-
 services:
   aggregator:
     build: ./aggregator
     image: uas-aggregator:latest
     depends_on:
+      storage:
+        condition: service_started
       broker:
         condition: service_started
     environment:
-      - DATABASE_URL=postgresql://postgres:admin@host.docker.internal:5432/aggregator_db
+      - DATABASE_URL=postgresql://postgres:admin@storage:5432/aggregator_db
       - REDIS_URL=redis://broker:6379
     ports:
       - "8080:8080"
@@ -30,6 +30,20 @@ services:
       - uas_network
     restart: unless-stopped
 
+  storage:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=aggregator_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - uas_network
+    restart: unless-stopped
+
   broker:
     image: redis:7-alpine
     ports:
@@ -41,6 +55,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres_data:
   redis_data:
   aggregator_logs:
 
