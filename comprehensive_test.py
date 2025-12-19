@@ -25,9 +25,13 @@ def test_comprehensive():
     # Test 2: Single Event Publishing
     print("\n2. Single Event Publishing...")
     
+    # Generate unique event ID for each test run
+    import uuid
+    unique_id = str(uuid.uuid4())[:8]
+    
     event = {
         "topic": "comprehensive_test",
-        "event_id": "comp-001",
+        "event_id": f"comp-{unique_id}",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "source": "test_source",
         "payload": {"test": "comprehensive", "number": 1}
