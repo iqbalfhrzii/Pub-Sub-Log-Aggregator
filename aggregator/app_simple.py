@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
+from contextlib import asynccontextmanager
 import logging
 from datetime import datetime, timezone
 import json
@@ -14,7 +15,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Pub-Sub Log Aggregator", version="1.0.0")
+# Global instances
+db = Database()
+start_time = datetime.now(timezone.utc)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await db.connect()
+    logger.info("Aggregator service started successfully")
+    yield
+    # Shutdown
+    await db.close()
+    logger.info("Aggregator service shutdown")
+
+app = FastAPI(title="Pub-Sub Log Aggregator", version="1.0.0", lifespan=lifespan)
 
 # Models
 class EventPayload(BaseModel):
@@ -26,22 +41,6 @@ class EventPayload(BaseModel):
 
 class BatchEvents(BaseModel):
     events: List[EventPayload]
-
-# Global instances
-db = Database()
-start_time = datetime.now(timezone.utc)
-
-@app.on_event("startup")
-async def startup_event():
-    """Inisialisasi koneksi database"""
-    await db.connect()
-    logger.info("Aggregator service started successfully")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup saat shutdown"""
-    await db.close()
-    logger.info("Aggregator service shutdown")
 
 def validate_event(event: EventPayload) -> Dict[str, Any]:
     """Validasi dan normalisasi event"""
@@ -195,4 +194,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8081)
+    uvicorn.run(app, host="0.0.0.0", port=8082)

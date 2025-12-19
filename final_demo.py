@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import uuid
 
 def demo_system():
-    base_url = "http://localhost:8081"
+    base_url = "http://localhost:8082"
     
     print("=== UAS Pub-Sub Aggregator Demo ===\n")
     

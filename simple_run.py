@@ -10,7 +10,7 @@ def run_aggregator():
     os.environ["DATABASE_URL"] = "postgresql://postgres:admin@localhost:5432/aggregator_db"
     
     print("Database URL:", os.environ["DATABASE_URL"])
-    print("Starting on http://localhost:8081")
+    print("Starting on http://localhost:8082")
     print("Press Ctrl+C to stop\n")
     
     # Change to aggregator directory
